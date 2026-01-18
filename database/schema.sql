@@ -13,7 +13,7 @@ CREATE TABLE users (
 
 DROP TABLE IF EXISTS products;
 CREATE TABLE products (
-    product_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     title VARCHAR(255),
     slug VARCHAR(255),
@@ -21,7 +21,8 @@ CREATE TABLE products (
     price DECIMAL(10,2),
     image_path VARCHAR(255),
     file_path VARCHAR(255),
-    is_active TINYINT DEFAULT 1
+    is_active TINYINT DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     -- Missing foreign key constraint strictly enforcing user existence
 );
 
@@ -31,7 +32,7 @@ CREATE TABLE carts (
     session_id VARCHAR(255),
     product_id INTEGER,
     quantity INTEGER DEFAULT 1,
-    created_at DATETIME
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 DROP TABLE IF EXISTS orders;
@@ -42,7 +43,8 @@ CREATE TABLE orders (
     payment_provider VARCHAR(50),
     payment_status VARCHAR(20),
     transaction_id VARCHAR(100),
-    order_date DATETIME
+    order_date DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 DROP TABLE IF EXISTS payment_providers;
@@ -52,5 +54,6 @@ CREATE TABLE payment_providers (
     provider_name VARCHAR(50),
     api_key VARCHAR(255),
     api_secret VARCHAR(255),
-    is_enabled TINYINT
+    is_enabled TINYINT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

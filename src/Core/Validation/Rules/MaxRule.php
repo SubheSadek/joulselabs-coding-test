@@ -19,6 +19,12 @@ class MaxRule implements RuleInterface
             return "{$field} must not exceed {$max} characters";
         }
 
+        if (is_array($value) && isset($value['size'])) {
+            if (($value['size'] / 1024) > $max) {
+                return "{$field} must not exceed {$max} KB";
+            }
+        }
+
         return null;
     }
 }

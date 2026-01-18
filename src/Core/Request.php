@@ -39,4 +39,38 @@ class Request
     {
         return $_POST[$key] ?? $_GET[$key] ?? $default;
     }
+
+    /**
+     * Check if a valid file was uploaded
+     *
+     * @param string $key
+     * @return bool
+     */
+    public function hasFile(string $key): bool
+    {
+        if (!isset($_FILES[$key])) {
+            return false;
+        }
+
+        if (is_array($_FILES[$key]['error'])) {
+            return in_array(UPLOAD_ERR_OK, $_FILES[$key]['error'], true);
+        }
+
+        return $_FILES[$key]['error'] === UPLOAD_ERR_OK;
+    }
+
+    /**
+     * Get uploaded file information
+     *
+     * @param string $key
+     * @return array|null
+     */
+    public function file(string $key): ?array
+    {
+        if (!$this->hasFile($key)) {
+            return null;
+        }
+
+        return $_FILES[$key];
+    }
 }

@@ -10,7 +10,11 @@ use SellNow\Core\Validation\Rules\{
     EmailRule,
     MaxRule,
     ConfirmedRule,
-    MinRule
+    MinRule,
+    FileRule,
+    MimesRule,
+    NullableRule,
+    NumericRule
 };
 
 class Validator
@@ -22,6 +26,10 @@ class Validator
         'max'      => MaxRule::class,
         'confirmed' => ConfirmedRule::class,
         'min'      => MinRule::class,
+        'file'     => FileRule::class,
+        'mimes'    => MimesRule::class,
+        'nullable' => NullableRule::class,
+        'numeric' => NumericRule::class,
     ];
 
     protected array $errors = [];
@@ -46,6 +54,10 @@ class Validator
     {
         $rules = explode('|', $ruleString);
 
+        if (in_array('nullable', $rules, true) && $this->isEmptyValue($value)) {
+            return;
+        }
+
         foreach ($rules as $rule) {
             [$name, $params] = $this->parseRule($rule);
 
@@ -61,6 +73,30 @@ class Validator
                 $this->errors[$field][] = $message;
             }
         }
+    }
+
+    /**
+     * Check if a value is empty.
+     */
+    protected function isEmptyValue(mixed $value): bool
+    {
+        if ($value === null) {
+            return true;
+        }
+
+        if (is_array($value) && isset($value['error'])) {
+            return $value['error'] !== UPLOAD_ERR_OK;
+        }
+
+        if (is_array($value)) {
+            return empty($value);
+        }
+
+        if (is_string($value)) {
+            return trim($value) === '';
+        }
+
+        return false;
     }
 
     /**
