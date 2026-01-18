@@ -8,6 +8,9 @@
         "vlucas/phpdotenv": "^5.5"
     },
     "autoload": {
+        "files": [
+            "src/Core/Helpers.php"
+        ],
         "psr-4": {
             "SellNow\\": "src/"
         }

@@ -6,22 +6,45 @@
 <div class="row justify-content-center">
     <div class="col-md-6">
         <h2>Register</h2>
+
+        {% if custom_errors is defined %}
+            {% for error in custom_errors %}
+                <div class="alert alert-danger mb-1">{{ error }}</div>
+            {% endfor %}
+        {% endif %}
+
         <form action="/register" method="POST">
             <div class="mb-3">
                 <label>Username (used for your shop URL)</label>
-                <input type="text" name="username" class="form-control" pattern="[a-zA-Z0-9]+" title="Alphanumeric only" required>
+                <input type="text" name="username" class="form-control" pattern="[a-zA-Z0-9]+" title="Alphanumeric only" required value="{{ old['username'] ?? '' }}">
+                {% if errors.username is defined %}
+                    <small style="color:red">{{ errors.username[0] }}</small>
+                {% endif %}
             </div>
             <div class="mb-3">
                 <label>Full Name</label>
-                <input type="text" name="fullname" class="form-control">
+                <input type="text" name="full_name" class="form-control" value="{{ old['full_name'] ?? '' }}">
+                {% if errors.full_name is defined %}
+                    <small style="color:red">{{ errors.full_name[0] }}</small>
+                {% endif %}
             </div>
             <div class="mb-3">
                 <label>Email</label>
-                <input type="email" name="email" class="form-control" required>
+                <input type="email" name="email" class="form-control" required value="{{ old['email'] ?? '' }}">
             </div>
             <div class="mb-3">
                 <label>Password</label>
                 <input type="password" name="password" class="form-control" required>
+                {% if errors.password is defined %}
+                    <small style="color:red">{{ errors.password[0] }}</small>
+                {% endif %}
+            </div>
+            <div class="mb-3">
+                <label>Confirm Password</label>
+                <input type="password" name="password_confirmation" class="form-control" required>
+                {% if errors.password_confirmation is defined %}
+                    <small style="color:red">{{ errors.password_confirmation[0] }}</small>
+                {% endif %}
             </div>
             <button type="submit" class="btn btn-success">Create Account</button>
         </form>

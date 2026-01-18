@@ -6,7 +6,7 @@ CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email VARCHAR(255) NOT NULL,
     username VARCHAR(50) NOT NULL,
-    Full_Name VARCHAR(100),
+    full_name VARCHAR(100),
     password VARCHAR(255) NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -25,8 +25,8 @@ CREATE TABLE products (
     -- Missing foreign key constraint strictly enforcing user existence
 );
 
-DROP TABLE IF EXISTS Carts;  -- Mixed case table name
-CREATE TABLE Carts (
+DROP TABLE IF EXISTS carts;  -- Mixed case table name
+CREATE TABLE carts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     session_id VARCHAR(255),
     product_id INTEGER,

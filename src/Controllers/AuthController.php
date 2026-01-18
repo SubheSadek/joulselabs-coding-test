@@ -1,85 +1,168 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SellNow\Controllers;
+
+use SellNow\Core\Request;
+use SellNow\Core\Validation\Validator;
+use SellNow\Repositories\UserRepository;
+use SellNow\Services\AuthService;
+use Twig\Environment;
 
 class AuthController
 {
+    public function __construct(
+        private Environment $twig,
+        private AuthService $authService,
+        private UserRepository $userRepo
+    ) {}
 
-    // Imperfect: Manual dependency injection via constructor every time
-    private $twig;
-    private $db;
-
-    public function __construct($twig, $db)
-    {
-        $this->twig = $twig;
-        $this->db = $db;
-    }
-
-    public function loginForm()
+    /**
+     * Get login form.
+     */
+    public function loginForm(): void
     {
         if (isset($_SESSION['user_id'])) {
             header("Location: /dashboard");
             exit;
         }
+
         echo $this->twig->render('auth/login.html.twig');
     }
 
-    public function login()
+    /**
+     * Login a user.
+     */
+    public function login(Request $request): void
     {
-        $email = $_POST['email'] ?? '';
-        $password = $_POST['password'] ?? '';
+        $data = [
+            'email' => $request->input('email'),
+            'password' => $request->input('password'),
+        ];
 
-        // Raw SQL, no Model
-        $stmt = $this->db->prepare("SELECT * FROM users WHERE email = ?");
-        $stmt->execute([$email]);
-        $user = $stmt->fetch(\PDO::FETCH_ASSOC);
+        $validator = new Validator();
 
-        if ($user && $password == $user['password']) {
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['username'] = $user['username'];
-            header("Location: /dashboard");
-            exit;
-        } else {
-            header("Location: /login?error=Invalid credentials");
+        $result = $validator->validate($data, [
+            'email' => 'required|string|max:255|email',
+            'password' => 'required|string|max:255|min:8',
+        ]);
+
+        if ($result->fails()) {
+            echo $this->twig->render('auth/login.html.twig', [
+                'errors' => $result->errors(),
+                'old' => $data,
+            ]);
+
             exit;
         }
+
+        $user = $this->userRepo->findByEmail($request->input('email'));
+
+        $errors = $this->authService->validateLoginData($request, $user);
+
+        if (! empty($errors)) {
+            echo $this->twig->render('auth/login.html.twig', [
+                'custom_errors' => $errors,
+                'old' => $data,
+            ]);
+
+            exit;
+        }
+
+        session_regenerate_id(true);
+
+        $_SESSION['user_id'] = $user->id();
+        $_SESSION['username'] = $user->username();
+        $_SESSION['email'] = $user->email();
+
+        header("Location: /dashboard");
+        exit;
     }
 
-    public function registerForm()
+    /**
+     * Get register form.
+     */
+    public function registerForm(): void
     {
+        if (isset($_SESSION['user_id'])) {
+            header("Location: /dashboard");
+            exit;
+        }
+
         echo $this->twig->render('auth/register.html.twig');
     }
 
-    public function register()
+    /**
+     * Register a new user.
+     */
+    public function register(Request $request): void
     {
-        if (empty($_POST['email']) || empty($_POST['password']))
-            die("Fill all fields");
+        $data = [
+            'email' => $request->input('email'),
+            'username' => $request->input('username'),
+            'full_name' => $request->input('full_name'),
+            'password' => $request->input('password'),
+            'password_confirmation' => $request->input('password_confirmation'),
+        ];
 
-        // Raw SQL
-        $sql = "INSERT INTO users (email, username, Full_Name, password) VALUES (?, ?, ?, ?)";
-        $stmt = $this->db->prepare($sql);
-        try {
-            $stmt->execute([
-                $_POST['email'],
-                $_POST['username'],
-                $_POST['fullname'],
-                $_POST['password']
+        $validator = new Validator();
+
+        $result = $validator->validate($data, [
+            'email' => 'required|string|max:255|email',
+            'username' => 'required|string|max:255',
+            'full_name' => 'required|string|max:255',
+            'password' => 'required|string|max:255|min:8|confirmed',
+        ]);
+
+        if ($result->fails()) {
+            echo $this->twig->render('auth/register.html.twig', [
+                'errors' => $result->errors(),
+                'old' => $data,
             ]);
-        } catch (\Exception $e) {
-            die("Error registering: " . $e->getMessage());
+
+            exit;
         }
+
+        $errors = $this->authService->validateRegisterData($request);
+
+        if (! empty($errors)) {
+            echo $this->twig->render('auth/register.html.twig', [
+                'custom_errors' => $errors,
+                'old' => $data,
+            ]);
+
+            exit;
+        }
+
+        $user = $this->authService->register($request);
 
         header("Location: /login?msg=Registered successfully");
         exit;
     }
 
-    public function dashboard()
+    /**
+     * Get dashboard.
+     */
+    public function dashboard(): void
     {
-        if (!isset($_SESSION['user_id']))
+        if (!isset($_SESSION['user_id'])) {
             header("Location: /login");
+            exit;
+        }
 
         echo $this->twig->render('dashboard.html.twig', [
             'username' => $_SESSION['username']
         ]);
+    }
+
+    /**
+     * Logout a user.
+     */
+    public function logout(): void
+    {
+        session_destroy();
+        header("Location: /login");
+        exit;
     }
 }
