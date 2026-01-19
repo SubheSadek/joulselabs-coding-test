@@ -37,10 +37,7 @@ class AuthController
      */
     public function login(Request $request): void
     {
-        $data = [
-            'email' => $request->input('email'),
-            'password' => $request->input('password'),
-        ];
+        $data = $this->authService->formatLoginRequest($request);
 
         $result = $this->authService->validateLoginRequest($data);
 
@@ -108,7 +105,7 @@ class AuthController
             exit;
         }
 
-        $errors = $this->authService->validateRegisterData($request);
+        $errors = $this->authService->validateRegisterData($data['email'], $data['username']);
 
         if (! empty($errors)) {
             echo $this->twig->render('auth/register.html.twig', [
@@ -119,7 +116,7 @@ class AuthController
             exit;
         }
 
-        $user = $this->authService->register($request);
+        $user = $this->authService->register($request, $data);
 
         header("Location: /login?msg=Registered successfully");
         exit;

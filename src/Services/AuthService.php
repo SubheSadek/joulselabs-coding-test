@@ -19,11 +19,11 @@ class AuthService
     /**
      * Validate register data
      */
-    public function validateRegisterData(Request $request): array
+    public function validateRegisterData(string $email, string $username): array
     {
         $errors = [];
 
-        $user = $this->userRepo->findByEmailOrUsername($request->input('email'), $request->input('username'));
+        $user = $this->userRepo->findByEmailOrUsername($email, $username);
 
         if (! empty($user)) {
             $errors[] = 'Invalid email address or username.';
@@ -35,15 +35,15 @@ class AuthService
     /**
      * Register a new user
      */
-    public function register(Request $request): User
+    public function register(Request $request, array $data): User
     {
-        $passwordHash = password_hash($request->input('password'), PASSWORD_BCRYPT);
+        $passwordHash = password_hash($data['password'], PASSWORD_BCRYPT);
 
         $user = $this->userRepo->create(
-            $request->input('email'),
+            $data['email'],
             $passwordHash,
-            $request->input('username'),
-            $request->input('full_name')
+            $data['username'],
+            $data['full_name']
         );
 
         return $user;
@@ -103,10 +103,21 @@ class AuthService
     {
         return [
             'email' => $request->input('email'),
-            'username' => $request->input('username'),
+            'username' => slugify($request->input('username')),
             'full_name' => $request->input('full_name'),
             'password' => $request->input('password'),
             'password_confirmation' => $request->input('password_confirmation'),
+        ];
+    }
+
+    /**
+     * Format login request
+     */
+    public function formatLoginRequest(Request $request): array
+    {
+        return [
+            'email' => $request->input('email'),
+            'password' => $request->input('password'),
         ];
     }
 }

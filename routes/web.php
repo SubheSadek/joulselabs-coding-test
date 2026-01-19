@@ -35,6 +35,6 @@ $router->post('/checkout/success', [CheckoutController::class, 'success']);
 // ** Product routes Start **
 $router->get('/products/add', [ProductController::class, 'create']);
 $router->post('/products/add', [ProductController::class, 'store']);
-$router->get('/{username}', [ProductController::class, 'show']);
+$router->get('/{username}/shop', [ProductController::class, 'show']);
 // ** Product routes End **
 

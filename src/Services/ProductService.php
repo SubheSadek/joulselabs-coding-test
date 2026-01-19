@@ -70,7 +70,7 @@ class ProductService
             $data['image_path'] = $this->fileUploader->upload($request->file('image'), 'img');
         }
 
-        $data['slug'] = strtolower(str_replace(' ', '-', $request->input('title'))) . '-' . rand(1000, 9999);
+        $data['slug'] = slugify($request->input('title')) . '-' . rand(1000, 9999);
 
         return $data;
     }
