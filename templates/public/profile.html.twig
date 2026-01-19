@@ -59,7 +59,8 @@ $(document).ready(function() {
             dataType: 'json',
             data: {
                 product_id: productId,
-                quantity: 1
+                quantity: 1,
+                _csrf: window.CSRF_TOKEN
             },
             success: function(response) {
                 if (response.status === 'success') {

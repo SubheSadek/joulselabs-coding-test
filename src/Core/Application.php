@@ -6,6 +6,7 @@ namespace SellNow\Core;
 
 use SellNow\Config\Database;
 use PDO;
+use SellNow\Core\Security\Csrf;
 use Twig\Environment;
 use Twig\Loader\FilesystemLoader;
 
@@ -35,6 +36,7 @@ class Application
             ]);
 
             $twig->addGlobal('session', $_SESSION);
+            $twig->addGlobal('csrf_token', Csrf::token());
 
             return $twig;
         });

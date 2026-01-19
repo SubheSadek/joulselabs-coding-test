@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace SellNow\Core;
 
+use SellNow\Core\Security\Csrf;
+
 class Router
 {
     private array $routes = [];
@@ -72,6 +74,12 @@ class Router
         if (!isset($this->routes[$method])) {
             http_response_code(404);
             echo "404 Not Found";
+            return;
+        }
+
+        if (in_array($method, ['POST','DELETE'], true) && !Csrf::validate($request->input('_csrf'))) {
+            http_response_code(419);
+            echo "Invalid CSRF token";
             return;
         }
 

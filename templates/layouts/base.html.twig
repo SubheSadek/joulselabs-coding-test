@@ -40,5 +40,9 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 {% block scripts %}{% endblock %}
+
+<script>
+    window.CSRF_TOKEN = "{{ csrf_token }}";
+</script>
 </body>
 </html>
