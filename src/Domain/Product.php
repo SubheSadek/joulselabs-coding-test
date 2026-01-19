@@ -15,7 +15,7 @@ class Product
         public float $price,
         public ?string $image_path,
         public ?string $file_path,
-        public int $is_active
+        public int | bool $is_active
     ) {}
 
     public static function fromArray(array $data): self

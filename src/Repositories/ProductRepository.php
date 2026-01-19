@@ -65,7 +65,7 @@ class ProductRepository
     ): array
     {
         $stmt = $this->db->prepare(
-            "SELECT id, user_id, title, slug, description, price, image_path, file_path, is_active
+            "SELECT id, user_id, title, slug, description, CAST(price AS FLOAT) as price, image_path, file_path, is_active
             FROM products
             WHERE user_id = ?
             ORDER BY id DESC
@@ -89,7 +89,7 @@ class ProductRepository
     public function getSingleProductById(int $id): ?Product
     {
         $stmt = $this->db->prepare(
-            "SELECT id, user_id, title, slug, description, price, image_path, file_path, is_active
+            "SELECT id, user_id, title, slug, description, CAST(price AS FLOAT) as price, image_path, file_path, is_active
             FROM products
             WHERE id = ?"
         );

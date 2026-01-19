@@ -12,24 +12,30 @@ class Database
 
     private function __construct()
     {
-        $isSqlite = true; // assessment mode
 
         try {
-            if ($isSqlite) {
-                $dbPath = __DIR__ . '/../../database/database.sqlite';
-                $this->conn = new PDO("sqlite:" . $dbPath);
-            } else {
-                $host     = $_ENV['DB_HOST'] ?? '127.0.0.1';
-                $db_name  = $_ENV['DB_NAME'] ?? 'sellnow';
-                $username = $_ENV['DB_USER'] ?? 'root';
-                $password = $_ENV['DB_PASS'] ?? '';
+            $connection = $_ENV['DB_CONNECTION'] ?? 'mysql';
+            $host       = $_ENV['DB_HOST'] ?? '127.0.0.1';
+            $port       = $_ENV['DB_PORT'] ?? null;
+            $db_name    = $_ENV['DB_DATABASE'] ?? 'sellnow';
+            $username   = $_ENV['DB_USERNAME'] ?? 'root';
+            $password   = $_ENV['DB_PASSWORD'] ?? '';
 
-                $this->conn = new PDO(
-                    "mysql:host=$host;dbname=$db_name;charset=utf8mb4",
-                    $username,
-                    $password
-                );
+            // Build DSN based on driver
+            switch ($connection) {
+                case 'pgsql':
+                    $port = $port ?: 5432;
+                    $dsn = "pgsql:host=$host;port=$port;dbname=$db_name";
+                    break;
+
+                case 'mysql':
+                default:
+                    $port = $port ?: 3306;
+                    $dsn = "mysql:host=$host;port=$port;dbname=$db_name;charset=utf8mb4";
+                    break;
             }
+
+            $this->conn = new PDO($dsn, $username, $password);
 
             // Secure PDO settings
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
