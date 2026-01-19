@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SellNow\Controllers;
 
 use SellNow\Core\Request;
+use SellNow\Core\Security\Csrf;
 use SellNow\Core\Validation\Validator;
 use SellNow\Repositories\UserRepository;
 use SellNow\Services\AuthService;
@@ -71,6 +72,7 @@ class AuthController
         }
 
         session_regenerate_id(true);
+        Csrf::regenerate();
 
         $_SESSION['user_id'] = $user->id();
         $_SESSION['username'] = $user->username();
@@ -161,7 +163,10 @@ class AuthController
      */
     public function logout(): void
     {
+        $_SESSION = [];
         session_destroy();
+        session_regenerate_id(true);
+        Csrf::regenerate();
         header("Location: /login");
         exit;
     }

@@ -6,6 +6,7 @@ namespace SellNow\Controllers;
 
 use SellNow\Core\Logger\TransactionLogger;
 use SellNow\Core\Request;
+use SellNow\Core\Security\Csrf;
 use SellNow\Services\CartService;
 use SellNow\Services\CheckoutService;
 use Twig\Environment;
@@ -121,6 +122,7 @@ class CheckoutController
 
         unset($_SESSION['cart']);
         unset($_SESSION['provider']);
+        Csrf::regenerate();
 
         echo $this->twig->render('success/index.html.twig', [
             'provider' => $provider

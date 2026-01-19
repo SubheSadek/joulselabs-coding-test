@@ -5,48 +5,54 @@ namespace SellNow\Config;
 use PDO;
 use PDOException;
 
-class Database {
-    private static $instance = null;
-    private $conn;
+class Database
+{
+    private static ?Database $instance = null;
+    private PDO $conn;
 
-    private $host = '127.0.0.1'; // TODO: Move to env
-    private $db_name = 'sellnow'; 
-    private $username = 'root';
-    private $password = ''; // user might need to change this
-
-    private function __construct() {
-        // Checking for SQLite first for this assessment
-        $isSqlite = true; // Hardcoded flip for now
+    private function __construct()
+    {
+        $isSqlite = true; // assessment mode
 
         try {
             if ($isSqlite) {
-                // Determine absolute path to database.sqlite
                 $dbPath = __DIR__ . '/../../database/database.sqlite';
                 $this->conn = new PDO("sqlite:" . $dbPath);
             } else {
-                // Fallback to MySQL
-                $this->conn = new PDO("mysql:host=" . $this->host . ";dbname=" . $this->db_name, $this->username, $this->password);
+                $host     = $_ENV['DB_HOST'] ?? '127.0.0.1';
+                $db_name  = $_ENV['DB_NAME'] ?? 'sellnow';
+                $username = $_ENV['DB_USER'] ?? 'root';
+                $password = $_ENV['DB_PASS'] ?? '';
+
+                $this->conn = new PDO(
+                    "mysql:host=$host;dbname=$db_name;charset=utf8mb4",
+                    $username,
+                    $password
+                );
             }
+
+            // Secure PDO settings
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        } catch(PDOException $e) {
-            echo "Connection Error: " . $e->getMessage();
-            exit; // Hard exit!
+            $this->conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+            $this->conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+
+        } catch (PDOException $e) {
+            error_log($e->getMessage());
+            die("Database connection failed. Please try again later.");
         }
     }
 
-    public static function getInstance() {
+    public static function getInstance(): Database
+    {
         if (!self::$instance) {
             self::$instance = new Database();
         }
+
         return self::$instance;
     }
 
-    public function getConnection() {
+    public function getConnection(): PDO
+    {
         return $this->conn;
-    }
-    
-    // Helper to just run a query
-    public function query($sql) {
-        return $this->conn->query($sql); // No preparation? Risk!
     }
 }
