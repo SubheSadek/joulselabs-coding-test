@@ -1,35 +1,36 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SellNow\Controllers;
+
+use SellNow\Core\Request;
+use SellNow\Repositories\ProductRepository;
+use SellNow\Repositories\UserRepository;
+use Twig\Environment;
 
 class PublicController
 {
-    private $twig;
-    private $db;
 
-    public function __construct($twig, $db)
+    public function __construct(
+        private Environment $twig,
+        private UserRepository $userRepo,
+        private ProductRepository $productRepo
+    ) {}
+
+    /**
+     * Get user profile
+     */
+    public function profile(Request $request, string $username): void
     {
-        $this->twig = $twig;
-        $this->db = $db;
-    }
+        $user = $this->userRepo->findByUsername($username);
 
-    public function profile($username)
-    {
-        // Raw SQL to find user
-        // Imperfect: Inefficient separate queries
-        $stmt = $this->db->prepare("SELECT * FROM users WHERE username = :u");
-        $stmt->execute(['u' => $username]);
-        $user = $stmt->fetch(\PDO::FETCH_OBJ);
-
-        if (!$user) {
+        if (empty($user)) {
             echo "User not found";
             return;
         }
 
-        // Raw SQL to find products
-        // Imperfect: SQL Injection possible if $user->id was tainted? (It's not here but shows intent)
-        $pStmt = $this->db->query("SELECT * FROM products WHERE user_id = $user->id");
-        $products = $pStmt->fetchAll(\PDO::FETCH_ASSOC);
+        $products = $this->productRepo->getProductsByUserId($user->id());
 
         echo $this->twig->render('public/profile.html.twig', [
             'seller' => $user,

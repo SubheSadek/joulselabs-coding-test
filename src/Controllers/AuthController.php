@@ -42,12 +42,7 @@ class AuthController
             'password' => $request->input('password'),
         ];
 
-        $validator = new Validator();
-
-        $result = $validator->validate($data, [
-            'email' => 'required|string|max:255|email',
-            'password' => 'required|string|max:255|min:8',
-        ]);
+        $result = $this->authService->validateLoginRequest($data);
 
         if ($result->fails()) {
             echo $this->twig->render('auth/login.html.twig', [
@@ -100,22 +95,9 @@ class AuthController
      */
     public function register(Request $request): void
     {
-        $data = [
-            'email' => $request->input('email'),
-            'username' => $request->input('username'),
-            'full_name' => $request->input('full_name'),
-            'password' => $request->input('password'),
-            'password_confirmation' => $request->input('password_confirmation'),
-        ];
+        $data = $this->authService->formatRegisterRequest($request);
 
-        $validator = new Validator();
-
-        $result = $validator->validate($data, [
-            'email' => 'required|string|max:255|email',
-            'username' => 'required|string|max:255',
-            'full_name' => 'required|string|max:255',
-            'password' => 'required|string|max:255|min:8|confirmed',
-        ]);
+        $result = $this->authService->validateRegisterRequest($data);
 
         if ($result->fails()) {
             echo $this->twig->render('auth/register.html.twig', [
