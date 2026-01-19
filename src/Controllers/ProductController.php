@@ -69,17 +69,43 @@ class ProductController
      */
     public function show(Request $request, string $username): void
     {
+        $requestData = $this->productService->formatPaginationData($request);
+
+        $result = $this->productService->validatePaginationRequest($requestData);
+
+        if ($result->fails()) {
+            die("Invalid pagination data");
+        }
+
         $user = $this->userRepo->findByUsername($username);
 
         if (empty($user)) {
             die("User not found");
         }
 
-        $products = $this->productRepo->getProductsByUserId($user->id());
+        $products = $this->productRepo->getProductsByUserId(
+            $user->id(),
+            $requestData['limit'],
+            $requestData['offset']
+        );
+
+        $total = $this->productRepo->countByUserId($user->id());
+        $hasMore = ($requestData['offset'] + $requestData['limit']) < $total;
+
+        if ($request->input('ajax') === '1') {
+            echo $this->twig->render('public/_products.html.twig', [
+                'products' => $products
+            ]);
+            return;
+        }
 
         echo $this->twig->render('public/profile.html.twig', [
-            'seller' => $user,
-            'products' => $products
+            'seller'       => $user,
+            'products'     => $products,
+            'currentPage'  => $requestData['page'],
+            'limit'        => $requestData['limit'],
+            'hasMore'      => $hasMore,
         ]);
     }
+
 }

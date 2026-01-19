@@ -8,32 +8,22 @@
     <p>Welcome to my shop.</p>
 </div>
 
-<div class="row">
-    {% for product in products %}
-    <div class="col-md-4 mb-4">
-        <div class="card h-100">
-            {% if product.image_path %}
-            <img src="/{{ product.image_path }}" class="card-img-top" alt="...">
-            {% else %}
-            <div class="bg-secondary text-white card-img-top p-5 text-center">No Image</div>
-            {% endif %}
-            
-            <div class="card-body">
-                <h5 class="card-title">{{ product.title }}</h5>
-                <p class="card-text">${{ product.price }}</p>
-                <button class="btn btn-success add-to-cart" 
-                        data-id="{{ product.id }}" 
-                        data-title="{{ product.title }}"
-                        data-price="{{ product.price }}">
-                    Add to Cart
-                </button>
-            </div>
-        </div>
-    </div>
-    {% else %}
-    <p>No products found.</p>
-    {% endfor %}
+<div class="row" id="product-list">
+    {% include "public/_products.html.twig" with { products: products } %}
 </div>
+
+{% if hasMore %}
+<div class="text-center mt-4">
+    <button id="load-more"
+        class="btn btn-outline-primary"
+        data-page="{{ currentPage + 1 }}"
+        data-limit="{{ limit }}"
+        data-username="{{ seller.username }}"
+    >
+        Load More
+    </button>
+</div>
+{% endif %}
 
 {% endblock %}
 
@@ -41,7 +31,52 @@
 <script>
 $(document).ready(function() {
 
-    $('.add-to-cart').on('click', function(e) {
+    let loading = false;
+
+    // Load more products
+    $('#load-more').on('click', function() {
+        if (loading) return;
+
+        const btn = $(this);
+        const nextPage = btn.data('page');
+        const limit = btn.data('limit');
+        const username = btn.data('username');
+
+        loading = true;
+        btn.text('Loading...').prop('disabled', true);
+
+        $.ajax({
+            url: `/${username}`,
+            method: 'GET',
+            data: {
+                page: nextPage,
+                limit: limit,
+                ajax: 1
+            },
+            success: function(html) {
+
+                if (!html || html.trim() === '') {
+                    btn.remove();
+                    return;
+                }
+
+                $('#product-list').append(html);
+
+                btn.data('page', nextPage + 1);
+                btn.text('Load More').prop('disabled', false);
+
+                loading = false;
+            },
+            error: function() {
+                alert('Failed to load more products.');
+                btn.text('Load More').prop('disabled', false);
+                loading = false;
+            }
+        });
+    });
+
+    // Add to cart
+    $(document).on('click', '.add-to-cart', function(e) {
         e.preventDefault();
 
         const btn = $(this);

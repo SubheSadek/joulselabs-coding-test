@@ -74,4 +74,33 @@ class ProductService
 
         return $data;
     }
+
+    /**
+     * Format pagination data.
+     */
+    public function formatPaginationData(Request $request): array
+    {
+        $page = max(1, (int) ($request->input('page') ?? 1));
+        $limit = $request->input('limit') ?? 20;
+        $offset = ($page - 1) * $limit;
+
+        return [
+            'page' => $page,
+            'limit' => $limit,
+            'offset' => $offset,
+        ];
+    }
+
+    /**
+     * Validate pagination request.
+     */
+    public function validatePaginationRequest(array $data): ValidationResult
+    {
+        $validator = new Validator();
+
+        return $validator->validate($data, [
+            'page' => 'required|integer|min:1',
+            'limit' => 'required|integer|min:1|max:100',
+        ]);
+    }
 }

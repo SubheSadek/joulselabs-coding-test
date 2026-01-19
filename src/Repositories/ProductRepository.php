@@ -58,16 +58,25 @@ class ProductRepository
     /**
      * Get products by user id.
      */
-    public function getProductsByUserId(int $userId): array
+    public function getProductsByUserId(
+        int $userId,
+        int $limit = 20,
+        int $offset = 0
+    ): array
     {
         $stmt = $this->db->prepare(
             "SELECT id, user_id, title, slug, description, price, image_path, file_path, is_active
             FROM products
             WHERE user_id = ?
-            ORDER BY id DESC"
+            ORDER BY id DESC
+            LIMIT ? OFFSET ?"
         );
 
-        $stmt->execute([$userId]);
+        $stmt->bindValue(1, $userId, PDO::PARAM_INT);
+        $stmt->bindValue(2, $limit, PDO::PARAM_INT);
+        $stmt->bindValue(3, $offset, PDO::PARAM_INT);
+
+        $stmt->execute();
 
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -90,6 +99,20 @@ class ProductRepository
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $row ? Product::fromArray($row) : null;
+    }
+
+    /**
+     * Count products by user id.
+     */
+    public function countByUserId(int $userId): int
+    {
+        $stmt = $this->db->prepare(
+            "SELECT COUNT(*) FROM products WHERE user_id = ?"
+        );
+
+        $stmt->execute([$userId]);
+
+        return (int) $stmt->fetchColumn();
     }
 
 }
