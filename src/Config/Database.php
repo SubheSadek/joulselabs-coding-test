@@ -44,7 +44,7 @@ class Database
 
         } catch (PDOException $e) {
             error_log($e->getMessage());
-            die("Database connection failed. Please try again later.");
+            die("Database connection failed. Please try again later." .  $e->getMessage());
         }
     }
 

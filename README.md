@@ -67,7 +67,62 @@ sellnowproject/
 
 ---
 
-## ⚙️ Installation
+
+## � Docker Installation
+
+If you prefer using Docker, a `compose.yaml` and `Makefile` are provided for ease of use.
+
+### 1. Configure Environment
+
+Copy the example environment file:
+
+```bash
+cp .env.example .env
+```
+
+Update `.env` to use the Docker database settings:
+
+```env
+DB_CONNECTION=pgsql
+DB_HOST=postgres
+DB_PORT=5432
+DB_DATABASE=sell_now
+DB_USERNAME=sell_now
+DB_PASSWORD=secret
+```
+
+### 2. Start Containers
+
+Use the Makefile to build and start the services:
+
+```bash
+make build
+make up
+```
+
+### 3. Install Dependencies
+
+Run composer install within the Docker container:
+
+```bash
+make composer install
+```
+
+### 4. Run Migrations
+
+Set up the database schema:
+
+```bash
+make migrate
+```
+
+### 5. Access the App
+
+The application will be available at: [http://sellnow.localhost](http://sellnow.localhost)
+
+---
+
+## ⚙️ Manual Installation
 
 ### 1. Clone & Install Dependencies
 
@@ -93,7 +148,6 @@ DB_PASSWORD=your_password
 PostgreSQL:
 
 CREATE DATABASE sell_now;
-```
 
 ### 4. Run Migrations
 
@@ -125,7 +179,7 @@ http://localhost:8000
 
 ---
 
-## 🔐 Security Notes
+## �🔐 Security Notes
 
 This project includes:
 
