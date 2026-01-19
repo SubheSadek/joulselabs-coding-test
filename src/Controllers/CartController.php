@@ -1,62 +1,79 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SellNow\Controllers;
+
+use SellNow\Core\Request;
+use SellNow\Repositories\ProductRepository;
+use SellNow\Services\CartService;
+use Twig\Environment;
 
 class CartController
 {
-    private $twig;
-    private $db;
+    public function __construct(
+        private CartService $cartService,
+        private ProductRepository $productRepo,
+        private Environment $twig
+    ) {}
 
-    public function __construct($twig, $db)
+    /**
+     * Show the cart.
+     */
+    public function index(Request $request): void
     {
-        $this->twig = $twig;
-        $this->db = $db;
+        $formattedCart = $this->cartService->formatCart();
+        echo $this->twig->render('cart/index.html.twig', $formattedCart);
     }
 
-    public function index()
+    /**
+     * Add a product to the cart.
+     */
+    public function add(Request $request): void
     {
-        $cart = $_SESSION['cart'] ?? [];
-        $total = 0;
-        foreach ($cart as $item) {
-            $total += $item['price'] * $item['quantity'];
+        $data = [
+            'product_id' => $request->input('product_id'),
+            'quantity' => $request->input('quantity'),
+        ];
+
+        $result = $this->cartService->validateAddToCartRequest($data);
+
+        if ($result->fails()) {
+            header('Content-Type: application/json');
+            http_response_code(422);
+            echo json_encode(['status' => 'error', 'errors' => $result->errors()]);
+            exit;
         }
 
-        echo $this->twig->render('cart/index.html.twig', [
-            'cart' => $cart,
-            'total' => $total
-        ]);
-    }
+        $product = $this->productRepo->getSingleProductById((int)$data['product_id']);
 
-    public function add()
-    {
-        $id = $_POST['product_id'];
-        $quantity = $_POST['quantity'];
-
-        // Raw DB call
-        $stmt = $this->db->prepare("SELECT * FROM products WHERE product_id = ?");
-        $stmt->execute([$id]);
-        $product = $stmt->fetch(\PDO::FETCH_ASSOC);
-
-        if (!$product) {
-            echo json_encode(['status' => 'error']);
+        if (empty($product)) {
+            header('Content-Type: application/json');
+            http_response_code(404);
+            echo json_encode(['status' => 'error', 'message' => 'Product not found']);
             exit;
         }
 
         $_SESSION['cart'][] = [
-            'product_id' => $product['product_id'],
-            'title' => $product['title'],
-            'price' => $product['price'],
-            'quantity' => $quantity
+            'product_id' => $product->id(),
+            'title' => $product->title(),
+            'price' => $product->price(),
+            'quantity' => $data['quantity']
         ];
 
         header('Content-Type: application/json');
+        http_response_code(200);
         echo json_encode(['status' => 'success', 'count' => count($_SESSION['cart'])]);
         exit;
     }
 
-    public function clear()
+    /**
+     * Clear the cart.
+     */
+    public function clear(Request $request): void
     {
         unset($_SESSION['cart']);
+        unset($_SESSION['provider']);
         header("Location: /cart");
         exit;
     }

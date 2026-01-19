@@ -14,7 +14,8 @@ use SellNow\Core\Validation\Rules\{
     FileRule,
     MimesRule,
     NullableRule,
-    NumericRule
+    NumericRule,
+    IntegerRule
 };
 
 class Validator
@@ -30,6 +31,7 @@ class Validator
         'mimes'    => MimesRule::class,
         'nullable' => NullableRule::class,
         'numeric' => NumericRule::class,
+        'integer' => IntegerRule::class,
     ];
 
     protected array $errors = [];

@@ -19,12 +19,6 @@ class HomeController
      */
     public function index(): void
     {
-        echo $this->twig->render(
-            'layouts/base.html.twig', 
-            [
-                'content' => "<h1>Welcome</h1><a href='/login'>Login</a>",
-                'title' => 'Home'
-            ]
-        );
+        echo $this->twig->render('home/index.html.twig');
     }
 }

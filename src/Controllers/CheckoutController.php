@@ -1,70 +1,93 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SellNow\Controllers;
+
+use SellNow\Core\Logger\TransactionLogger;
+use SellNow\Core\Request;
+use SellNow\Services\CartService;
+use SellNow\Services\CheckoutService;
+use Twig\Environment;
 
 class CheckoutController
 {
-    private $twig;
-    private $db;
+    public function __construct(
+        protected Environment $twig,
+        protected CheckoutService $checkoutService,
+        protected CartService $cartService,
+        protected TransactionLogger $logger
+    )
+    {}
 
-    public function __construct($twig, $db)
-    {
-        $this->twig = $twig;
-        $this->db = $db;
-    }
-
-    public function index()
+    /**
+     * Checkout page
+     *
+     * @param Request $request
+     * @return void
+     */
+    public function index(Request $request): void
     {
         $cart = $_SESSION['cart'] ?? [];
+
         if (empty($cart)) {
             header("Location: /cart");
             exit;
         }
 
-        $total = 0;
-        foreach ($cart as $item) {
-            $total += $item['price'] * $item['quantity'];
-        }
-
-        $providers = ['Stripe', 'PayPal', 'Razorpay'];
-
-        echo $this->twig->render('checkout/index.html.twig', [
-            'total' => $total,
-            'providers' => $providers
-        ]);
+        $data = $this->checkoutService->formatCheckoutData($cart);
+        echo $this->twig->render('checkout/index.html.twig', $data);
     }
 
-    public function process()
+    /**
+     * Process checkout
+     *
+     * @param Request $request
+     * @return void
+     */
+    public function process(Request $request): void
     {
-        // Redirect to mock payment page instead of finishing
-        $provider = $_POST['provider'] ?? 'Unknown';
+        $provider = $request->input('provider');
 
-        // Check cart not empty just in case
+        if (!$this->checkoutService->isValidProvider($provider)) {
+            header("Location: /checkout");
+            exit;
+        }
+
         if (empty($_SESSION['cart'])) {
             header("Location: /cart");
             exit;
         }
 
-        // Calculate total again? Or pass it?
-        // Let's pass via query string (Insecure! Perfect for assessment)
-        $total = 0;
-        foreach ($_SESSION['cart'] as $item) {
-            $total += $item['price'] * $item['quantity'];
-        }
+        $_SESSION['provider'] = $provider;
 
-        header("Location: /payment?provider=$provider&total=$total");
+        header("Location: /payment");
         exit;
     }
 
-    public function payment()
+    /**
+     * Payment page
+     *
+     * @param Request $request
+     * @return void
+     */
+    public function payment(Request $request): void
     {
-        if (empty($_SESSION['cart'])) {
+        $cart = $_SESSION['cart'] ?? [];
+
+        if (empty($cart)) {
             header("Location: /cart");
             exit;
         }
 
-        $provider = $_GET['provider'] ?? 'Test';
-        $total = $_GET['total'] ?? 0;
+        $provider = $_SESSION['provider'];
+
+        if (!$this->checkoutService->isValidProvider($provider)) {
+            header("Location: /checkout");
+            exit;
+        }
+
+        $total = $this->cartService->getCartTotal($cart);
 
         echo $this->twig->render('checkout/payment.html.twig', [
             'provider' => $provider,
@@ -72,21 +95,35 @@ class CheckoutController
         ]);
     }
 
-    public function success()
+    /**
+     * Success page
+     *
+     * @param Request $request
+     * @return void
+     */
+    public function success(Request $request): void
     {
-        $provider = $_POST['provider'] ?? 'Unknown';
+        $provider = $_SESSION['provider'];
 
-        $logFile = __DIR__ . '/../../storage/logs/transactions.log';
-        if (!is_dir(dirname($logFile)))
-            mkdir(dirname($logFile), 0777, true);
+        if (!$this->checkoutService->isValidProvider($provider)) {
+            header("Location: /checkout");
+            exit;
+        }
 
-        $data = date('Y-m-d H:i:s') . " - Order processed via $provider - User: " . ($_SESSION['user_id'] ?? 'Guest') . "\n";
-        file_put_contents($logFile, $data, FILE_APPEND);
+        $cart = $_SESSION['cart'] ?? [];
+
+        if (empty($cart)) {
+            header("Location: /cart");
+            exit;
+        }
+
+        $this->logger->log($provider, $_SESSION['user_id'] ?? null);
 
         unset($_SESSION['cart']);
+        unset($_SESSION['provider']);
 
-        echo $this->twig->render('layouts/base.html.twig', [
-            'content' => "<h1>Thank you for your purchase!</h1><p>Payment via $provider successful.</p><a href='/dashboard' class='btn btn-primary'>Go to Dashboard</a>"
+        echo $this->twig->render('success/index.html.twig', [
+            'provider' => $provider
         ]);
     }
 }

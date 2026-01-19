@@ -51,7 +51,45 @@ class ProductRepository
             $price,
             $imagePath,
             $filePath,
-            true
+            1
         );
     }
+
+    /**
+     * Get products by user id.
+     */
+    public function getProductsByUserId(int $userId): array
+    {
+        $stmt = $this->db->prepare(
+            "SELECT id, user_id, title, slug, description, price, image_path, file_path, is_active
+            FROM products
+            WHERE user_id = ?
+            ORDER BY id DESC"
+        );
+
+        $stmt->execute([$userId]);
+
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return array_map(fn($row) => Product::fromArray($row), $rows);
+    }
+
+    /**
+     * Get a single product by id.
+     */
+    public function getSingleProductById(int $id): ?Product
+    {
+        $stmt = $this->db->prepare(
+            "SELECT id, user_id, title, slug, description, price, image_path, file_path, is_active
+            FROM products
+            WHERE id = ?"
+        );
+
+        $stmt->execute([$id]);
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ? Product::fromArray($row) : null;
+    }
+
 }

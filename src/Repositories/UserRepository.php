@@ -30,6 +30,24 @@ class UserRepository
     }
 
     /**
+     * Find user by username
+     * 
+     * @param string $value
+     * @return ?User
+     */
+    public function findByUsername(string $value): ?User
+    {
+        $stmt = $this->db->prepare(
+            "SELECT * FROM users WHERE username = ? LIMIT 1"
+        );
+
+        $stmt->execute([$value]);
+
+        $data = $stmt->fetch();
+        return $data ? User::fromArray($data) : null;
+    }
+
+    /**
      * Find user by email or username
      * 
      * @param string $email

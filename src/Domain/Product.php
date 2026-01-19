@@ -15,7 +15,7 @@ class Product
         public float $price,
         public ?string $image_path,
         public ?string $file_path,
-        public bool $is_active
+        public int $is_active
     ) {}
 
     public static function fromArray(array $data): self
@@ -70,6 +70,7 @@ class Product
 
     public function isActive(): bool
     {
-        return $this->is_active;
+        return $this->is_active === 1;
     }
+    
 }

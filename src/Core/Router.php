@@ -15,7 +15,7 @@ class Router
      */
     public function get(string $path, array $handler): void
     {
-        $this->routes['GET'][$path] = $handler;
+        $this->addRoute('GET', $path, $handler);
     }
 
     /**
@@ -23,7 +23,7 @@ class Router
      */
     public function post(string $path, array $handler): void
     {
-        $this->routes['POST'][$path] = $handler;
+        $this->addRoute('POST', $path, $handler);
     }
 
     /**
@@ -31,7 +31,7 @@ class Router
      */
     public function put(string $path, array $handler): void
     {
-        $this->routes['PUT'][$path] = $handler;
+        $this->addRoute('PUT', $path, $handler);
     }
 
     /**
@@ -39,7 +39,7 @@ class Router
      */
     public function patch(string $path, array $handler): void
     {
-        $this->routes['PATCH'][$path] = $handler;
+        $this->addRoute('PATCH', $path, $handler);
     }
 
     /**
@@ -47,26 +47,60 @@ class Router
      */
     public function delete(string $path, array $handler): void
     {
-        $this->routes['DELETE'][$path] = $handler;
+        $this->addRoute('DELETE', $path, $handler);
     }
 
     /**
-     * @param Request $request
+     * Add route to routes array.
+     */
+    protected function addRoute(string $method, string $path, array $handler): void
+    {
+        $this->routes[$method][] = [
+            'path' => $path,
+            'handler' => $handler,
+        ];
+    }
+
+    /**
+     * Dispatch request to the correct controller.
      */
     public function dispatch(Request $request): void
     {
         $method = $request->method();
         $path   = $request->path();
 
-        if (!isset($this->routes[$method][$path])) {
+        if (!isset($this->routes[$method])) {
             http_response_code(404);
             echo "404 Not Found";
             return;
         }
 
-        [$controller, $action] = $this->routes[$method][$path];
-        $instance = $this->container->get($controller);
+        foreach ($this->routes[$method] as $route) {
+            $pattern = $this->convertPathToRegex($route['path']);
 
-        $instance->$action($request);
+            if (preg_match($pattern, $path, $matches)) {
+                array_shift($matches); // remove full match
+
+                [$controller, $action] = $route['handler'];
+                $instance = $this->container->get($controller);
+
+                // Pass request + route parameters
+                $instance->$action($request, ...$matches);
+                return;
+            }
+        }
+
+        http_response_code(404);
+        echo "404 Not Found";
+    }
+
+    /**
+     * Convert path to regex.
+     */
+    protected function convertPathToRegex(string $path): string
+    {
+        $pattern = preg_replace('#\{[^/]+\}#', '([^/]+)', $path);
+        return '#^' . $pattern . '$#';
     }
 }
+

@@ -3,7 +3,8 @@
 namespace SellNow\Controllers;
 
 use SellNow\Core\Request;
-use SellNow\Services\FileUploaderService;
+use SellNow\Repositories\ProductRepository;
+use SellNow\Repositories\UserRepository;
 use SellNow\Services\ProductService;
 use Twig\Environment;
 
@@ -12,7 +13,9 @@ class ProductController
 
     public function __construct(
         private Environment $twig,
-        private ProductService $productService
+        private ProductService $productService,
+        protected UserRepository $userRepo,
+        protected ProductRepository $productRepo
     ) {}
 
     /**
@@ -59,5 +62,24 @@ class ProductController
 
         header("Location: /dashboard");
         exit;
+    }
+
+    /**
+     * Show user products.
+     */
+    public function show(Request $request, string $username): void
+    {
+        $user = $this->userRepo->findByUsername($username);
+
+        if (empty($user)) {
+            die("User not found");
+        }
+
+        $products = $this->productRepo->getProductsByUserId($user->id());
+
+        echo $this->twig->render('public/profile.html.twig', [
+            'seller' => $user,
+            'products' => $products
+        ]);
     }
 }
